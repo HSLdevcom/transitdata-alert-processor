@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t hsldevcom/transitdata-omm-alert-source .
+docker build -t hsldevcom/transitdata-alert-processor .

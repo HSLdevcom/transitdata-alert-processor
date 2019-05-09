@@ -1,13 +1,13 @@
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) master  
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=develop)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) develop
+[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-alert-processor.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-alert-processor) master
+[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-alert-processor.svg?branch=develop)](https://travis-ci.org/HSLdevcom/transitdata-alert-processor) develop
 
-# Transitdata-omm-alert-source
+# transitdata-alert-processor
 
 This project is part of the [Transitdata Pulsar-pipeline](https://github.com/HSLdevcom/transitdata).
 
 ## Description
 
-Application for creating GTFS-RT Service Alerts from OMM database.
+Application for creating GTFS-RT Service Alerts from internal service alert messages.
 
 ## Building
 
@@ -32,8 +32,6 @@ Requirements:
   - By default uses localhost, override host in PULSAR_HOST if needed.
     - Tip: f.ex if running inside Docker in OSX set `PULSAR_HOST=host.docker.internal` to connect to the parent machine
   - You can use [this script](https://github.com/HSLdevcom/transitdata/blob/master/bin/pulsar/pulsar-up.sh) to launch it as Docker container
-- Connection string to OMM database is read from file.
-  - Set filepath via env variable FILEPATH_CONNECTION_STRING, default is `/run/secrets/db_conn_string`
 
 Launch Docker container with
 
