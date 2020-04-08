@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.*;
 
 public class AlertHandlerTest {
@@ -105,12 +106,14 @@ public class AlertHandlerTest {
         assertEquals(3, alert.getInformedEntityList().size());
         assertEquals(GtfsRealtime.Alert.SeverityLevel.INFO, alert.getSeverityLevel());
 
-        GtfsRealtime.EntitySelector selector = alert.getInformedEntity(0);
-        assertFalse(selector.hasTrip());
-        assertFalse(selector.hasStopId());
-        assertFalse(selector.hasAgencyId());
-        assertTrue(selector.hasRouteId());
-        assertEquals("4562", selector.getRouteId());
+        Collection<GtfsRealtime.EntitySelector> selectors = alert.getInformedEntityList();
+        selectors.forEach(selector -> {
+            assertFalse(selector.hasTrip());
+            assertFalse(selector.hasStopId());
+            assertFalse(selector.hasAgencyId());
+            assertTrue(selector.hasRouteId());
+        });
+        assertThat(selectors.stream().map(GtfsRealtime.EntitySelector::getRouteId).collect(Collectors.toList()), hasItem("4562"));
 
         GtfsRealtime.TranslatedString header = alert.getHeaderText();
         assertEquals(3, header.getTranslationCount());
@@ -142,11 +145,7 @@ public class AlertHandlerTest {
         assertEquals(AlertHandler.toGtfsSeverityLevel(InternalMessages.Bulletin.Priority.INFO).get(), gtfsAlert.getSeverityLevel());
 
         List<GtfsRealtime.EntitySelector> entities = gtfsAlert.getInformedEntityList();
-        validateEntitySelector(entities.get(0),  "1230103");
-        validateEntitySelector(entities.get(1),  "1230104");
-        validateEntitySelector(entities.get(2),  "1230101");
-        validateEntitySelector(entities.get(3),  "1232102");
-        validateEntitySelector(entities.get(4),  "1232104");
+        validateEntitySelectors(entities, "1230103", "1230104", "1230101", "1232102", "1232104");
 
         GtfsRealtime.TranslatedString header = gtfsAlert.getHeaderText();
         assertEquals(3, header.getTranslationCount());
@@ -191,13 +190,15 @@ public class AlertHandlerTest {
         });
     }
 
-    private void validateEntitySelector(GtfsRealtime.EntitySelector entity, String id) {
-        assertFalse(entity.hasAgencyId());
-        assertTrue(entity.hasStopId());
-        assertFalse(entity.hasRouteId());
-        assertFalse(entity.hasRouteType());
-        assertFalse(entity.hasTrip());
-        assertEquals(id, entity.getStopId());
+    private void validateEntitySelectors(Collection<GtfsRealtime.EntitySelector> entities, String... ids) {
+        for (GtfsRealtime.EntitySelector entity : entities) {
+            assertFalse(entity.hasAgencyId());
+            assertTrue(entity.hasStopId());
+            assertFalse(entity.hasRouteId());
+            assertFalse(entity.hasRouteType());
+            assertFalse(entity.hasTrip());
+            assertThat(Arrays.asList(ids), hasItem(entity.getStopId()));
+        }
     }
 
     @Test
