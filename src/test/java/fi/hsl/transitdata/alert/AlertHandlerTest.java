@@ -9,8 +9,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -194,5 +198,23 @@ public class AlertHandlerTest {
         assertFalse(entity.hasRouteType());
         assertFalse(entity.hasTrip());
         assertEquals(id, entity.getStopId());
+    }
+
+    @Test
+    public void testEntitySelectorRouteIdsAreNormalized() {
+        List<InternalMessages.Bulletin.AffectedEntity> entities = Stream.of("1009", "1009 1", "1009 6")
+                .map(routeId -> InternalMessages.Bulletin.AffectedEntity.newBuilder().setEntityId(routeId).build())
+                .collect(Collectors.toList());
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
+                .addAllAffectedRoutes(entities)
+                .setLastModifiedUtcMs(System.currentTimeMillis())
+                .setValidFromUtcMs(System.currentTimeMillis())
+                .setValidToUtcMs(System.currentTimeMillis())
+                .build();
+
+        Collection<GtfsRealtime.EntitySelector> selectors = AlertHandler.entitySelectorsForBulletin(bulletin);
+        assertEquals(1, selectors.size());
+        assertTrue(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009").build()));
+        assertFalse(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009 1").build()));
     }
 }
