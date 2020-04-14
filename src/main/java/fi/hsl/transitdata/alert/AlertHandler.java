@@ -4,6 +4,7 @@ import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
+import fi.hsl.common.transitdata.RouteIdUtils;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.TransitdataSchema;
 import fi.hsl.common.transitdata.proto.InternalMessages;
@@ -11,9 +12,7 @@ import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class AlertHandler implements IMessageHandler {
@@ -93,7 +92,7 @@ public class AlertHandler implements IMessageHandler {
             final Optional<GtfsRealtime.Alert.SeverityLevel> maybeSeverityLevel = toGtfsSeverityLevel(bulletin.getPriority());
             maybeSeverityLevel.map(severityLevel -> builder.setSeverityLevel(severityLevel));
 
-            List<GtfsRealtime.EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin);
+            Collection<GtfsRealtime.EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin);
             if (entitySelectors.isEmpty()) {
                 log.error("Failed to find any Informed Entities for bulletin Id {}. Discarding alert.", bulletin.getBulletinId());
                 maybeAlert = Optional.empty();
@@ -110,8 +109,8 @@ public class AlertHandler implements IMessageHandler {
         return maybeAlert;
     }
 
-    static List<GtfsRealtime.EntitySelector> entitySelectorsForBulletin(final InternalMessages.Bulletin bulletin) {
-        List<GtfsRealtime.EntitySelector> selectors = new LinkedList<>();
+    static Collection<GtfsRealtime.EntitySelector> entitySelectorsForBulletin(final InternalMessages.Bulletin bulletin) {
+        Set<GtfsRealtime.EntitySelector> selectors = new HashSet<>();
         if (bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops()) {
             log.debug("Bulletin {} affects all routes or stops", bulletin.getBulletinId());
 
@@ -123,7 +122,8 @@ public class AlertHandler implements IMessageHandler {
         if (bulletin.getAffectedRoutesCount() > 0) {
             for (final InternalMessages.Bulletin.AffectedEntity route : bulletin.getAffectedRoutesList()) {
                 GtfsRealtime.EntitySelector entity = GtfsRealtime.EntitySelector.newBuilder()
-                        .setRouteId(route.getEntityId()).build();
+                        .setRouteId(RouteIdUtils.normalizeRouteId(route.getEntityId())) //Normalize route ID to avoid publishing IDs that are not present in the static feed
+                        .build();
                 selectors.add(entity);
             }
         }
