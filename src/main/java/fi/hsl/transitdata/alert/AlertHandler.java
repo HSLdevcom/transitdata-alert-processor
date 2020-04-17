@@ -86,11 +86,17 @@ public class AlertHandler implements IMessageHandler {
             builder.addActivePeriod(timeRange);
             builder.setCause(toGtfsCause(bulletin.getCategory()));
             builder.setEffect(toGtfsEffect(bulletin.getImpact()));
-            builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
-            builder.setDescriptionText(toGtfsTranslatedString(bulletin.getDescriptionsList()));
-            builder.setUrl(toGtfsTranslatedString(bulletin.getUrlsList()));
+            if (bulletin.getTitlesCount() > 0) {
+                builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
+            }
+            if (bulletin.getDescriptionsCount() > 0) {
+                builder.setDescriptionText(toGtfsTranslatedString(bulletin.getDescriptionsList()));
+            }
+            if (bulletin.getUrlsCount() > 0) {
+                builder.setUrl(toGtfsTranslatedString(bulletin.getUrlsList()));
+            }
             final Optional<GtfsRealtime.Alert.SeverityLevel> maybeSeverityLevel = toGtfsSeverityLevel(bulletin.getPriority());
-            maybeSeverityLevel.map(severityLevel -> builder.setSeverityLevel(severityLevel));
+            maybeSeverityLevel.ifPresent(builder::setSeverityLevel);
 
             Collection<GtfsRealtime.EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin);
             if (entitySelectors.isEmpty()) {
