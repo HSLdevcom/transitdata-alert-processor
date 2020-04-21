@@ -86,11 +86,17 @@ public class AlertHandler implements IMessageHandler {
             builder.addActivePeriod(timeRange);
             builder.setCause(toGtfsCause(bulletin.getCategory()));
             builder.setEffect(toGtfsEffect(bulletin.getImpact()));
-            builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
-            builder.setDescriptionText(toGtfsTranslatedString(bulletin.getDescriptionsList()));
-            builder.setUrl(toGtfsTranslatedString(bulletin.getUrlsList()));
+            if (bulletin.getTitlesCount() > 0) {
+                builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
+            }
+            if (bulletin.getDescriptionsCount() > 0) {
+                builder.setDescriptionText(toGtfsTranslatedString(bulletin.getDescriptionsList()));
+            }
+            if (bulletin.getUrlsCount() > 0) {
+                builder.setUrl(toGtfsTranslatedString(bulletin.getUrlsList()));
+            }
             final Optional<GtfsRealtime.Alert.SeverityLevel> maybeSeverityLevel = toGtfsSeverityLevel(bulletin.getPriority());
-            maybeSeverityLevel.map(severityLevel -> builder.setSeverityLevel(severityLevel));
+            maybeSeverityLevel.ifPresent(builder::setSeverityLevel);
 
             Collection<GtfsRealtime.EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin);
             if (entitySelectors.isEmpty()) {
@@ -157,59 +163,75 @@ public class AlertHandler implements IMessageHandler {
 
     public static GtfsRealtime.Alert.Cause toGtfsCause(final InternalMessages.Category category) {
         switch (category) {
-            case OTHER_DRIVER_ERROR: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case ITS_SYSTEM_ERROR: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case TOO_MANY_PASSENGERS: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case MISPARKED_VEHICLE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case STRIKE: return GtfsRealtime.Alert.Cause.STRIKE;
-            case TEST: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case VEHICLE_OFF_THE_ROAD: return GtfsRealtime.Alert.Cause.ACCIDENT;
-            case TRAFFIC_ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
-            case SWITCH_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case SEIZURE: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
-            case WEATHER: return GtfsRealtime.Alert.Cause.WEATHER;
-            case STATE_VISIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case ROAD_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
-            case ROAD_CLOSED: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
-            case TRACK_BLOCKED: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case WEATHER_CONDITIONS: return GtfsRealtime.Alert.Cause.WEATHER;
-            case ASSAULT: return GtfsRealtime.Alert.Cause.POLICE_ACTIVITY;
-            case TRACK_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
-            case MEDICAL_INCIDENT: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
-            case EARLIER_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case TECHNICAL_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case TRAFFIC_JAM: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case OTHER: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case NO_TRAFFIC_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
-            case PUBLIC_EVENT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case ROAD_TRENCH: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
-            case VEHICLE_BREAKDOWN: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case POWER_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            case STAFF_DEFICIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case DISTURBANCE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-            case VEHICLE_DEFICIT: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-            default: return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
+            case OTHER_DRIVER_ERROR:
+            case TOO_MANY_PASSENGERS:
+            case MISPARKED_VEHICLE:
+            case TEST:
+            case STATE_VISIT:
+            case TRACK_BLOCKED:
+            case EARLIER_DISRUPTION:
+            case OTHER:
+            case NO_TRAFFIC_DISRUPTION:
+            case TRAFFIC_JAM:
+            case PUBLIC_EVENT:
+            case STAFF_DEFICIT:
+            case DISTURBANCE:
+                return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+            case ITS_SYSTEM_ERROR:
+            case SWITCH_FAILURE:
+            case TECHNICAL_FAILURE:
+            case VEHICLE_BREAKDOWN:
+            case POWER_FAILURE:
+            case VEHICLE_DEFICIT:
+                return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+            case STRIKE:
+                return GtfsRealtime.Alert.Cause.STRIKE;
+            case VEHICLE_OFF_THE_ROAD:
+            case TRAFFIC_ACCIDENT:
+            case ACCIDENT:
+                return GtfsRealtime.Alert.Cause.ACCIDENT;
+            case SEIZURE:
+            case MEDICAL_INCIDENT:
+                return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
+            case WEATHER:
+            case WEATHER_CONDITIONS:
+                return GtfsRealtime.Alert.Cause.WEATHER;
+            case ROAD_MAINTENANCE:
+            case TRACK_MAINTENANCE:
+                return GtfsRealtime.Alert.Cause.MAINTENANCE;
+            case ROAD_CLOSED:
+            case ROAD_TRENCH:
+                return GtfsRealtime.Alert.Cause.CONSTRUCTION;
+            case ASSAULT:
+                return GtfsRealtime.Alert.Cause.POLICE_ACTIVITY;
+            default:
+                return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
         }
     }
 
     public static GtfsRealtime.Alert.Effect toGtfsEffect(final InternalMessages.Bulletin.Impact impact) {
         switch (impact) {
-            case CANCELLED: return GtfsRealtime.Alert.Effect.NO_SERVICE;
-            case DELAYED: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-            case DEVIATING_SCHEDULE: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
-            case DISRUPTION_ROUTE: return GtfsRealtime.Alert.Effect.DETOUR;
-            case IRREGULAR_DEPARTURES: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-            case POSSIBLE_DEVIATIONS: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
-            case POSSIBLY_DELAYED: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-            case REDUCED_TRANSPORT: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-            case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-            case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-            case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-            case OTHER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-            case NO_TRAFFIC_IMPACT: return GtfsRealtime.Alert.Effect.NO_EFFECT;
-            case UNKNOWN: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-            default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
+            case CANCELLED:
+                return GtfsRealtime.Alert.Effect.NO_SERVICE;
+            case DELAYED:
+            case IRREGULAR_DEPARTURES:
+                return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+            case DEVIATING_SCHEDULE:
+            case POSSIBLE_DEVIATIONS:
+                return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
+            case DISRUPTION_ROUTE:
+                return GtfsRealtime.Alert.Effect.DETOUR;
+            case POSSIBLY_DELAYED:
+            case VENDING_MACHINE_OUT_OF_ORDER:
+            case RETURNING_TO_NORMAL:
+            case OTHER:
+                return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+            case REDUCED_TRANSPORT:
+                return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
+            case NO_TRAFFIC_IMPACT:
+                return GtfsRealtime.Alert.Effect.NO_EFFECT;
+            default:
+                return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
         }
     }
 
