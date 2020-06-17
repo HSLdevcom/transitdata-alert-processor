@@ -75,6 +75,11 @@ public class AlertHandler implements IMessageHandler {
     static Optional<GtfsRealtime.Alert> createAlert(final InternalMessages.Bulletin bulletin) {
         Optional<GtfsRealtime.Alert> maybeAlert;
         try {
+            if (bulletin.hasDisplayOnly() && bulletin.getDisplayOnly()) {
+                log.debug("No alert created for bulletin {} that is meant to be published only on vehicle displays", bulletin.getBulletinId());
+                return Optional.empty();
+            }
+
             final long startInUtcSecs = bulletin.getValidFromUtcMs() / 1000;
             final long stopInUtcSecs = bulletin.getValidToUtcMs() / 1000;
             final GtfsRealtime.TimeRange timeRange = GtfsRealtime.TimeRange.newBuilder()
