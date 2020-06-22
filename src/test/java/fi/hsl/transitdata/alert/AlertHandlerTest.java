@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -199,6 +200,25 @@ public class AlertHandlerTest {
             assertFalse(entity.hasTrip());
             assertThat(Arrays.asList(ids), hasItem(entity.getStopId()));
         }
+    }
+
+    @Test
+    public void testNoAlertIsCreatedForDisplayOnlyBulletin() {
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
+                .setBulletinId("1")
+                .setAffectsAllRoutes(true)
+                .setAffectsAllStops(true)
+                .setCategory(InternalMessages.Category.STRIKE)
+                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED)
+                .setValidFromUtcMs(0)
+                .setValidToUtcMs(Long.MAX_VALUE)
+                .setLastModifiedUtcMs(Instant.now().getEpochSecond())
+                .addDescriptions(InternalMessages.Bulletin.Translation.newBuilder().setLanguage("en").setText("Test"))
+                .setDisplayOnly(true)
+                .build();
+
+        Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin);
+        assertFalse(alert.isPresent());
     }
 
     @Test
