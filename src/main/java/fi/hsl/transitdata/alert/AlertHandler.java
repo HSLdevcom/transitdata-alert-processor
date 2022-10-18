@@ -112,11 +112,16 @@ public class AlertHandler implements IMessageHandler {
                 builder.addAllInformedEntity(entitySelectors);
                 maybeAlert = Optional.of(builder.build());
             }
-        }
-        catch (Exception e) {
-            log.error("Exception while creating an alert!", e);
+        } catch (Exception e) {
+            log.error("Exception while creating an alert for bulletin {}!", bulletin.getBulletinId(), e);
             maybeAlert = Optional.empty();
         }
+
+        maybeAlert.ifPresent(alert -> {
+            final Optional<String> titleEn = alert.getHeaderText().getTranslationList().stream().filter(translation -> "en".equals(translation.getLanguage())).findAny().map(GtfsRealtime.TranslatedString.Translation::getText);
+            log.info("Created an alert with title {} for bulletin {}", titleEn.orElse("null"), bulletin.getBulletinId());
+        });
+
         return maybeAlert;
     }
 
@@ -155,7 +160,7 @@ public class AlertHandler implements IMessageHandler {
                     .eventTime(timestampMs)
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.GTFS_ServiceAlert.toString())
                     .send();
-            log.info("Produced a new alert with timestamp {}", timestampMs);
+            log.info("Produced a new GTFS-RT service alert message with timestamp {}", timestampMs);
         }
         catch (PulsarClientException e) {
             log.error("Failed to send message to Pulsar", e);
