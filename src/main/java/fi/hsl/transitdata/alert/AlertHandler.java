@@ -25,7 +25,7 @@ public class AlertHandler implements IMessageHandler {
 
     public AlertHandler(final PulsarApplicationContext context) {
         consumer = context.getConsumer();
-        producer = context.getProducer();
+        producer = context.getSingleProducer();
     }
 
     public void handleMessage(final Message message) {
@@ -72,6 +72,10 @@ public class AlertHandler implements IMessageHandler {
                 .collect(Collectors.toList());
     }
 
+    private static boolean bulletinAffectsAll(InternalMessages.Bulletin bulletin) {
+        return bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops();
+    }
+
     static Optional<GtfsRealtime.Alert> createAlert(final InternalMessages.Bulletin bulletin) {
         Optional<GtfsRealtime.Alert> maybeAlert;
         try {
@@ -90,7 +94,7 @@ public class AlertHandler implements IMessageHandler {
             final GtfsRealtime.Alert.Builder builder = GtfsRealtime.Alert.newBuilder();
             builder.addActivePeriod(timeRange);
             builder.setCause(toGtfsCause(bulletin.getCategory()));
-            builder.setEffect(toGtfsEffect(bulletin.getImpact()));
+            builder.setEffect(getGtfsEffect(bulletin));
             if (bulletin.getTitlesCount() > 0) {
                 builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
             }
@@ -127,7 +131,7 @@ public class AlertHandler implements IMessageHandler {
 
     static Collection<GtfsRealtime.EntitySelector> entitySelectorsForBulletin(final InternalMessages.Bulletin bulletin) {
         Set<GtfsRealtime.EntitySelector> selectors = new HashSet<>();
-        if (bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops()) {
+        if (bulletinAffectsAll(bulletin)) {
             log.debug("Bulletin {} affects all routes or stops", bulletin.getBulletinId());
 
             GtfsRealtime.EntitySelector agency = GtfsRealtime.EntitySelector.newBuilder()
@@ -219,10 +223,14 @@ public class AlertHandler implements IMessageHandler {
         }
     }
 
-    public static GtfsRealtime.Alert.Effect toGtfsEffect(final InternalMessages.Bulletin.Impact impact) {
+    public static GtfsRealtime.Alert.Effect getGtfsEffect(final InternalMessages.Bulletin bulletin) {
+        final boolean affectsAll = bulletinAffectsAll(bulletin);
+        final InternalMessages.Bulletin.Impact impact = bulletin.getImpact();
+
         switch (impact) {
             case CANCELLED:
-                return GtfsRealtime.Alert.Effect.NO_SERVICE;
+                //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
+                return affectsAll ? GtfsRealtime.Alert.Effect.REDUCED_SERVICE : GtfsRealtime.Alert.Effect.NO_SERVICE;
             case DELAYED:
             case IRREGULAR_DEPARTURES:
                 return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
