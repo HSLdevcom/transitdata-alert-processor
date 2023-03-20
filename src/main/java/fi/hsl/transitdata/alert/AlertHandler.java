@@ -227,10 +227,19 @@ public class AlertHandler implements IMessageHandler {
         final boolean affectsAll = bulletinAffectsAll(bulletin);
         final InternalMessages.Bulletin.Impact impact = bulletin.getImpact();
 
+        final GtfsRealtime.Alert.Effect effect = toGtfsEffect(impact);
+        if (effect == GtfsRealtime.Alert.Effect.NO_SERVICE && affectsAll) {
+            //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
+            return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
+        }
+
+        return effect;
+    }
+
+    public static GtfsRealtime.Alert.Effect toGtfsEffect(final InternalMessages.Bulletin.Impact impact) {
         switch (impact) {
             case CANCELLED:
-                //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
-                return affectsAll ? GtfsRealtime.Alert.Effect.REDUCED_SERVICE : GtfsRealtime.Alert.Effect.NO_SERVICE;
+                return GtfsRealtime.Alert.Effect.NO_SERVICE;
             case DELAYED:
             case IRREGULAR_DEPARTURES:
                 return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;

@@ -23,22 +23,9 @@ import static org.junit.Assert.*;
 public class AlertHandlerTest {
 
     private byte[] readProtobufFromResourceFile(final String filename) throws IOException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        URL url =  classLoader.getResource(filename);
-        byte[] data;
-        try  (InputStream inputStream = url.openStream()) {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-            byte[] readWindow = new byte[256];
-            int numberOfBytesRead;
-
-            while ((numberOfBytesRead = inputStream.read(readWindow)) > 0) {
-                byteArrayOutputStream.write(readWindow, 0, numberOfBytesRead);
-            }
-
-            data = byteArrayOutputStream.toByteArray();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(filename)) {
+            return is.readAllBytes();
         }
-        return data;
     }
 
     private InternalMessages.ServiceAlert readDefaultMockData() throws IOException {
