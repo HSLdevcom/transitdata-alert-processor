@@ -225,4 +225,24 @@ public class AlertHandlerTest {
         assertTrue(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009").build()));
         assertFalse(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009 1").build()));
     }
+
+    @Test
+    public void testNoServiceEffectIsNotUsedWhenBulletinAffectAll() {
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
+                .setBulletinId("1")
+                .setAffectsAllRoutes(true)
+                .setAffectsAllStops(true)
+                .setCategory(InternalMessages.Category.STRIKE)
+                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED)
+                .setValidFromUtcMs(0)
+                .setValidToUtcMs(Long.MAX_VALUE)
+                .setLastModifiedUtcMs(Instant.now().getEpochSecond())
+                .addDescriptions(InternalMessages.Bulletin.Translation.newBuilder().setLanguage("en").setText("Test"))
+                .setDisplayOnly(false)
+                .build();
+
+        Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin);
+        assertTrue(alert.isPresent());
+        assertNotEquals(GtfsRealtime.Alert.Effect.NO_SERVICE, alert.get().getEffect());
+    }
 }
