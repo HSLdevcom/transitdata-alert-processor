@@ -20,12 +20,16 @@ public class AlertHandler implements IMessageHandler {
 
     public static final String AGENCY_ENTITY_SELECTOR = "HSL";
 
-    private Consumer<byte[]> consumer;
-    private Producer<byte[]> producer;
+    private final Consumer<byte[]> consumer;
+    private final Producer<byte[]> producer;
+
+    private final boolean globalNoServiceAlerts;
 
     public AlertHandler(final PulsarApplicationContext context) {
         consumer = context.getConsumer();
         producer = context.getSingleProducer();
+
+        globalNoServiceAlerts = context.getConfig().getBoolean("application.enableGlobalNoServiceAlerts");
     }
 
     public void handleMessage(final Message message) {
@@ -38,7 +42,7 @@ public class AlertHandler implements IMessageHandler {
             final long timestampMs = message.getEventTime();
             final long timestampSecs = timestampMs / 1000;
 
-            List<GtfsRealtime.FeedEntity> entities = createFeedEntities(alert.getBulletinsList());
+            List<GtfsRealtime.FeedEntity> entities = createFeedEntities(alert.getBulletinsList(), globalNoServiceAlerts);
             GtfsRealtime.FeedMessage feedMessage = FeedMessageFactory.createFullFeedMessage(entities, timestampSecs);
 
             sendPulsarMessage(feedMessage, timestampMs);
@@ -58,9 +62,9 @@ public class AlertHandler implements IMessageHandler {
                 .thenRun(() -> {});
     }
 
-    static List<GtfsRealtime.FeedEntity> createFeedEntities(final List<InternalMessages.Bulletin> bulletins) {
+    static List<GtfsRealtime.FeedEntity> createFeedEntities(final List<InternalMessages.Bulletin> bulletins, final boolean globalNoServiceAlerts) {
         return bulletins.stream().map(bulletin -> {
-            final Optional<GtfsRealtime.Alert> maybeAlert = createAlert(bulletin);
+            final Optional<GtfsRealtime.Alert> maybeAlert = createAlert(bulletin, globalNoServiceAlerts);
             return maybeAlert.map(alert -> {
                 GtfsRealtime.FeedEntity.Builder builder = GtfsRealtime.FeedEntity.newBuilder();
                 builder.setId(bulletin.getBulletinId());
@@ -76,7 +80,7 @@ public class AlertHandler implements IMessageHandler {
         return bulletin.getAffectsAllRoutes() || bulletin.getAffectsAllStops();
     }
 
-    static Optional<GtfsRealtime.Alert> createAlert(final InternalMessages.Bulletin bulletin) {
+    static Optional<GtfsRealtime.Alert> createAlert(final InternalMessages.Bulletin bulletin, final boolean globalNoServiceAlerts) {
         Optional<GtfsRealtime.Alert> maybeAlert;
         try {
             if (bulletin.hasDisplayOnly() && bulletin.getDisplayOnly()) {
@@ -94,7 +98,7 @@ public class AlertHandler implements IMessageHandler {
             final GtfsRealtime.Alert.Builder builder = GtfsRealtime.Alert.newBuilder();
             builder.addActivePeriod(timeRange);
             builder.setCause(toGtfsCause(bulletin.getCategory()));
-            builder.setEffect(getGtfsEffect(bulletin));
+            builder.setEffect(getGtfsEffect(bulletin, globalNoServiceAlerts));
             if (bulletin.getTitlesCount() > 0) {
                 builder.setHeaderText(toGtfsTranslatedString(bulletin.getTitlesList()));
             }
@@ -223,12 +227,12 @@ public class AlertHandler implements IMessageHandler {
         }
     }
 
-    public static GtfsRealtime.Alert.Effect getGtfsEffect(final InternalMessages.Bulletin bulletin) {
+    public static GtfsRealtime.Alert.Effect getGtfsEffect(final InternalMessages.Bulletin bulletin, final boolean globalNoServiceAlerts) {
         final boolean affectsAll = bulletinAffectsAll(bulletin);
         final InternalMessages.Bulletin.Impact impact = bulletin.getImpact();
 
         final GtfsRealtime.Alert.Effect effect = toGtfsEffect(impact);
-        if (effect == GtfsRealtime.Alert.Effect.NO_SERVICE && affectsAll) {
+        if (effect == GtfsRealtime.Alert.Effect.NO_SERVICE && affectsAll && !globalNoServiceAlerts) {
             //If the bulletin affects all traffic (i.e. entity selector list contains agency), we don't want to use NO_SERVICE effect, because otherwise Google and others will display all traffic as cancelled
             return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
         }
