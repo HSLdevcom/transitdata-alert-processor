@@ -35,7 +35,7 @@ jobs:
           name: transitdata-alert-processor-jar-with-dependencies.jar
           path: target
       - name: Build and publish develop Docker image
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: hsldevcom/transitdata-alert-processor
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -54,7 +54,7 @@ jobs:
           name: transitdata-alert-processor-jar-with-dependencies.jar
           path: target
       - name: Build and publish release Docker image
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: hsldevcom/transitdata-alert-processor
           username: ${{ secrets.DOCKER_USERNAME }}
