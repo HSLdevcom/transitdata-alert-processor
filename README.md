@@ -1,7 +1,4 @@
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-alert-processor.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-alert-processor) master
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-alert-processor.svg?branch=develop)](https://travis-ci.org/HSLdevcom/transitdata-alert-processor) develop
-
-# transitdata-alert-processor
+# transitdata-alert-processor [![Test and create Docker image](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/test-and-build.yml)
 
 This project is part of the [Transitdata Pulsar-pipeline](https://github.com/HSLdevcom/transitdata).
 
@@ -17,8 +14,8 @@ This project depends on [transitdata-common](https://github.com/HSLdevcom/transi
 
 ### Locally
 
-- ```mvn compile```  
-- ```mvn package```  
+- `mvn compile`
+- `mvn package`
 
 ### Docker image
 
