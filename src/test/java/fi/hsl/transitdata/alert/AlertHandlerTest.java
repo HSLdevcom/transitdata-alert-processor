@@ -5,10 +5,8 @@ import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,22 +21,9 @@ import static org.junit.Assert.*;
 public class AlertHandlerTest {
 
     private byte[] readProtobufFromResourceFile(final String filename) throws IOException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        URL url =  classLoader.getResource(filename);
-        byte[] data;
-        try  (InputStream inputStream = url.openStream()) {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-            byte[] readWindow = new byte[256];
-            int numberOfBytesRead;
-
-            while ((numberOfBytesRead = inputStream.read(readWindow)) > 0) {
-                byteArrayOutputStream.write(readWindow, 0, numberOfBytesRead);
-            }
-
-            data = byteArrayOutputStream.toByteArray();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(filename)) {
+            return is.readAllBytes();
         }
-        return data;
     }
 
     private InternalMessages.ServiceAlert readDefaultMockData() throws IOException {
@@ -51,7 +36,7 @@ public class AlertHandlerTest {
         final InternalMessages.ServiceAlert alert = readDefaultMockData();
         final List<InternalMessages.Bulletin> bulletins = alert.getBulletinsList();
 
-        List<GtfsRealtime.FeedEntity> feedEntities = AlertHandler.createFeedEntities(bulletins);
+        List<GtfsRealtime.FeedEntity> feedEntities = AlertHandler.createFeedEntities(bulletins, true);
         assertEquals(bulletins.size(), feedEntities.size());
         validateMockDataFirstEntity(feedEntities.get(0));
         return feedEntities;
@@ -131,7 +116,7 @@ public class AlertHandlerTest {
         final InternalMessages.ServiceAlert alert = readDefaultMockData();
         final List<InternalMessages.Bulletin> bulletins = alert.getBulletinsList();
 
-        List<GtfsRealtime.FeedEntity> feedEntities = AlertHandler.createFeedEntities(bulletins);
+        List<GtfsRealtime.FeedEntity> feedEntities = AlertHandler.createFeedEntities(bulletins, true);
         Optional<GtfsRealtime.FeedEntity> maybeEntity = feedEntities.stream().filter(entity -> entity.getId().equals("6431")).findFirst();
         assertTrue(maybeEntity.isPresent());
 
@@ -217,7 +202,7 @@ public class AlertHandlerTest {
                 .setDisplayOnly(true)
                 .build();
 
-        Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin);
+        Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin, true);
         assertFalse(alert.isPresent());
     }
 
@@ -237,5 +222,25 @@ public class AlertHandlerTest {
         assertEquals(1, selectors.size());
         assertTrue(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009").build()));
         assertFalse(selectors.contains(GtfsRealtime.EntitySelector.newBuilder().setRouteId("1009 1").build()));
+    }
+
+    @Test
+    public void testNoServiceEffectIsNotUsedWhenBulletinAffectAll() {
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
+                .setBulletinId("1")
+                .setAffectsAllRoutes(true)
+                .setAffectsAllStops(true)
+                .setCategory(InternalMessages.Category.STRIKE)
+                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED)
+                .setValidFromUtcMs(0)
+                .setValidToUtcMs(Long.MAX_VALUE)
+                .setLastModifiedUtcMs(Instant.now().getEpochSecond())
+                .addDescriptions(InternalMessages.Bulletin.Translation.newBuilder().setLanguage("en").setText("Test"))
+                .setDisplayOnly(false)
+                .build();
+
+        Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin, false);
+        assertTrue(alert.isPresent());
+        assertNotEquals(GtfsRealtime.Alert.Effect.NO_SERVICE, alert.get().getEffect());
     }
 }
