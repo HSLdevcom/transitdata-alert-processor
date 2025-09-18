@@ -99,7 +99,8 @@ public class AlertHandlerTest {
             assertFalse(selector.hasAgencyId());
             assertTrue(selector.hasRouteId());
         });
-        assertThat(selectors.stream().map(GtfsRealtime.EntitySelector::getRouteId).collect(Collectors.toList()), hasItem("4562"));
+        assertThat(selectors.stream().map(GtfsRealtime.EntitySelector::getRouteId).collect(Collectors.toList()),
+                hasItem("4562"));
 
         GtfsRealtime.TranslatedString header = alert.getHeaderText();
         assertEquals(3, header.getTranslationCount());
@@ -117,18 +118,21 @@ public class AlertHandlerTest {
         final List<InternalMessages.Bulletin> bulletins = alert.getBulletinsList();
 
         List<GtfsRealtime.FeedEntity> feedEntities = AlertHandler.createFeedEntities(bulletins, true);
-        Optional<GtfsRealtime.FeedEntity> maybeEntity = feedEntities.stream().filter(entity -> entity.getId().equals("6431")).findFirst();
+        Optional<GtfsRealtime.FeedEntity> maybeEntity = feedEntities.stream()
+                .filter(entity -> entity.getId().equals("6431")).findFirst();
         assertTrue(maybeEntity.isPresent());
 
         GtfsRealtime.Alert gtfsAlert = maybeEntity.get().getAlert();
 
         assertEquals(AlertHandler.toGtfsCause(InternalMessages.Category.ROAD_CLOSED), gtfsAlert.getCause());
-        assertEquals(AlertHandler.toGtfsEffect(InternalMessages.Bulletin.Impact.DISRUPTION_ROUTE), gtfsAlert.getEffect());
+        assertEquals(AlertHandler.toGtfsEffect(InternalMessages.Bulletin.Impact.DISRUPTION_ROUTE),
+                gtfsAlert.getEffect());
         assertEquals(1, gtfsAlert.getActivePeriodCount());
-        assertEquals( 1557885600L, gtfsAlert.getActivePeriod(0).getStart());
-        assertEquals( 1558198800L, gtfsAlert.getActivePeriod(0).getEnd());
+        assertEquals(1557885600L, gtfsAlert.getActivePeriod(0).getStart());
+        assertEquals(1558198800L, gtfsAlert.getActivePeriod(0).getEnd());
         assertEquals(5, gtfsAlert.getInformedEntityCount());
-        assertEquals(AlertHandler.toGtfsSeverityLevel(InternalMessages.Bulletin.Priority.INFO).get(), gtfsAlert.getSeverityLevel());
+        assertEquals(AlertHandler.toGtfsSeverityLevel(InternalMessages.Bulletin.Priority.INFO).get(),
+                gtfsAlert.getSeverityLevel());
 
         List<GtfsRealtime.EntitySelector> entities = gtfsAlert.getInformedEntityList();
         validateEntitySelectors(entities, "1230103", "1230104", "1230101", "1232102", "1232104");
@@ -137,13 +141,17 @@ public class AlertHandlerTest {
         assertEquals(3, header.getTranslationCount());
         header.getTranslationList().forEach(translation -> {
             switch (translation.getLanguage()) {
-                case "fi": assertEquals("Hämeentie suljettu 18.5. Arabian katufestivaalin ", translation.getText());
+                case "fi" :
+                    assertEquals("Hämeentie suljettu 18.5. Arabian katufestivaalin ", translation.getText());
                     break;
-                case "sv": assertEquals("Gatan avstängd", translation.getText());
+                case "sv" :
+                    assertEquals("Gatan avstängd", translation.getText());
                     break;
-                case "en": assertEquals("Road closed", translation.getText());
+                case "en" :
+                    assertEquals("Road closed", translation.getText());
                     break;
-                default: assertTrue(false);
+                default :
+                    assertTrue(false);
             }
         });
 
@@ -151,13 +159,22 @@ public class AlertHandlerTest {
         assertEquals(3, description.getTranslationCount());
         description.getTranslationList().forEach(translation -> {
             switch (translation.getLanguage()) {
-                case "fi": assertEquals("Linjat 52, 55, 71, 78N ja 506 Arabiassa poikkeusreiteillä la 18.5. klo 9-20. /Info: hsl.fi.", translation.getText());
+                case "fi" :
+                    assertEquals(
+                            "Linjat 52, 55, 71, 78N ja 506 Arabiassa poikkeusreiteillä la 18.5. klo 9-20. /Info: hsl.fi.",
+                            translation.getText());
                     break;
-                case "sv": assertEquals("Linjerna 52, 55, 71, 78N och 506 kör avvikande rutter i Arabia 18.5 kl. 9-20. /Info: hsl.fi/sv", translation.getText());
+                case "sv" :
+                    assertEquals(
+                            "Linjerna 52, 55, 71, 78N och 506 kör avvikande rutter i Arabia 18.5 kl. 9-20. /Info: hsl.fi/sv",
+                            translation.getText());
                     break;
-                case "en": assertEquals("Buses 52, 55, 71, 78N and 506 diverted in Arabia on 18 May 9am-8pm. /Info: hsl.fi/en", translation.getText());
+                case "en" :
+                    assertEquals("Buses 52, 55, 71, 78N and 506 diverted in Arabia on 18 May 9am-8pm. /Info: hsl.fi/en",
+                            translation.getText());
                     break;
-                default: assertTrue(false);
+                default :
+                    assertTrue(false);
             }
         });
 
@@ -165,13 +182,17 @@ public class AlertHandlerTest {
         assertEquals(3, url.getTranslationCount());
         url.getTranslationList().forEach(translation -> {
             switch (translation.getLanguage()) {
-                case "fi": assertEquals("https://www.hsl.fi/", translation.getText());
+                case "fi" :
+                    assertEquals("https://www.hsl.fi/", translation.getText());
                     break;
-                case "sv": assertEquals("https://www.hsl.fi/sv", translation.getText());
+                case "sv" :
+                    assertEquals("https://www.hsl.fi/sv", translation.getText());
                     break;
-                case "en": assertEquals("https://www.hsl.fi/en", translation.getText());
+                case "en" :
+                    assertEquals("https://www.hsl.fi/en", translation.getText());
                     break;
-                default: assertTrue(false);
+                default :
+                    assertTrue(false);
             }
         });
     }
@@ -189,18 +210,12 @@ public class AlertHandlerTest {
 
     @Test
     public void testNoAlertIsCreatedForDisplayOnlyBulletin() {
-        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
-                .setBulletinId("1")
-                .setAffectsAllRoutes(true)
-                .setAffectsAllStops(true)
-                .setCategory(InternalMessages.Category.STRIKE)
-                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED)
-                .setValidFromUtcMs(0)
-                .setValidToUtcMs(Long.MAX_VALUE)
-                .setLastModifiedUtcMs(Instant.now().getEpochSecond())
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder().setBulletinId("1")
+                .setAffectsAllRoutes(true).setAffectsAllStops(true).setCategory(InternalMessages.Category.STRIKE)
+                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED).setValidFromUtcMs(0)
+                .setValidToUtcMs(Long.MAX_VALUE).setLastModifiedUtcMs(Instant.now().getEpochSecond())
                 .addDescriptions(InternalMessages.Bulletin.Translation.newBuilder().setLanguage("en").setText("Test"))
-                .setDisplayOnly(true)
-                .build();
+                .setDisplayOnly(true).build();
 
         Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin, true);
         assertFalse(alert.isPresent());
@@ -211,12 +226,9 @@ public class AlertHandlerTest {
         List<InternalMessages.Bulletin.AffectedEntity> entities = Stream.of("1009", "1009 1", "1009 6")
                 .map(routeId -> InternalMessages.Bulletin.AffectedEntity.newBuilder().setEntityId(routeId).build())
                 .collect(Collectors.toList());
-        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
-                .addAllAffectedRoutes(entities)
-                .setLastModifiedUtcMs(System.currentTimeMillis())
-                .setValidFromUtcMs(System.currentTimeMillis())
-                .setValidToUtcMs(System.currentTimeMillis())
-                .build();
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder().addAllAffectedRoutes(entities)
+                .setLastModifiedUtcMs(System.currentTimeMillis()).setValidFromUtcMs(System.currentTimeMillis())
+                .setValidToUtcMs(System.currentTimeMillis()).build();
 
         Collection<GtfsRealtime.EntitySelector> selectors = AlertHandler.entitySelectorsForBulletin(bulletin);
         assertEquals(1, selectors.size());
@@ -226,18 +238,12 @@ public class AlertHandlerTest {
 
     @Test
     public void testNoServiceEffectIsNotUsedWhenBulletinAffectAll() {
-        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder()
-                .setBulletinId("1")
-                .setAffectsAllRoutes(true)
-                .setAffectsAllStops(true)
-                .setCategory(InternalMessages.Category.STRIKE)
-                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED)
-                .setValidFromUtcMs(0)
-                .setValidToUtcMs(Long.MAX_VALUE)
-                .setLastModifiedUtcMs(Instant.now().getEpochSecond())
+        InternalMessages.Bulletin bulletin = InternalMessages.Bulletin.newBuilder().setBulletinId("1")
+                .setAffectsAllRoutes(true).setAffectsAllStops(true).setCategory(InternalMessages.Category.STRIKE)
+                .setImpact(InternalMessages.Bulletin.Impact.CANCELLED).setValidFromUtcMs(0)
+                .setValidToUtcMs(Long.MAX_VALUE).setLastModifiedUtcMs(Instant.now().getEpochSecond())
                 .addDescriptions(InternalMessages.Bulletin.Translation.newBuilder().setLanguage("en").setText("Test"))
-                .setDisplayOnly(false)
-                .build();
+                .setDisplayOnly(false).build();
 
         Optional<GtfsRealtime.Alert> alert = AlertHandler.createAlert(bulletin, false);
         assertTrue(alert.isPresent());
