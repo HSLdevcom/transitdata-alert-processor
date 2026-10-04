@@ -157,4 +157,20 @@ public class AlertProcessorIT {
                 GtfsRealtime.FeedMessage.parseFrom(output.getData()).getHeader().getTimestamp());
         assertNull("invalid messages must not produce output", outputConsumer.receive(3, TimeUnit.SECONDS));
     }
+
+    @Test
+    public void messageWithoutEventTimeIsDroppedAndAcked() throws Exception {
+        // Current behavior: the handler copies the input event time (0 when unset) to the output message, the Pulsar
+        // client rejects eventTime(0) with IllegalArgumentException, and the alert is logged and dropped. The input is
+        // still acked, so processing continues with the next message.
+        byte[] payload = alertFixture();
+        inputProducer.newMessage().value(payload).property(TransitdataProperties.KEY_PROTOBUF_SCHEMA,
+                TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString()).send();
+        send(payload, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert);
+
+        Message<byte[]> output = outputConsumer.receive(30, TimeUnit.SECONDS);
+        assertNotNull("message with event time after the dropped one was not processed", output);
+        assertEquals(EVENT_TIME_MS, output.getEventTime());
+        assertNull("message without event time must not produce output", outputConsumer.receive(3, TimeUnit.SECONDS));
+    }
 }

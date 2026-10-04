@@ -213,7 +213,9 @@ public class AlertHandlerMessageTest {
     }
 
     @Test
-    public void eventTimeZeroProducesZeroHeaderTimestamp() throws Exception {
+    public void eventTimeZeroIsPassedToProducerAsIs() throws Exception {
+        // Messages without an event time report 0. The handler forwards it unchanged; the real Pulsar client rejects
+        // eventTime(0), so such alerts are dropped (see AlertProcessorIT#messageWithoutEventTimeIsDroppedAndAcked).
         Message<byte[]> message = message(serviceAlert(),
                 TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString());
         when(message.getEventTime()).thenReturn(0L);
