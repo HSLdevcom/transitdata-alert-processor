@@ -1,4 +1,4 @@
-# transitdata-alert-processor [![Test and create Docker image](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/test-and-build.yml)
+# transitdata-alert-processor [![CI/CD](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-alert-processor/actions/workflows/ci-cd.yml)
 
 This project is part of the [Transitdata Pulsar-pipeline](https://github.com/HSLdevcom/transitdata).
 
@@ -12,14 +12,20 @@ Application for creating GTFS-RT Service Alerts from internal service alert mess
 
 This project depends on [transitdata-common](https://github.com/HSLdevcom/transitdata-common) project.
 
+Requires Java 25. `transitdata-common` is resolved from GitHub Packages, so `GITHUB_ACTOR` and `GITHUB_TOKEN`
+(a token with `read:packages`) must be set, or configured in `~/.m2/settings.xml`.
+
 ### Locally
 
-- `mvn compile`
-- `mvn package`
+- `./mvnw compile`
+- `./mvnw test` runs the unit tests
+- `./mvnw verify` also runs the integration tests (`*IT`, needs Docker for Testcontainers)
+- `./mvnw spotless:apply` formats the code; CI only runs `spotless:check`
+- `./mvnw package` builds `target/transitdata-alert-processor.jar`
 
 ### Docker image
 
-- Run [this script](build-image.sh) to build the Docker image
+- Run [this script](build-image.sh) to build the Docker image (passes `GITHUB_TOKEN` as a build secret)
 
 
 ## Running
