@@ -2,6 +2,7 @@ package fi.hsl.transitdata.alert;
 
 import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.common.gtfsrt.FeedMessageFactory;
+import fi.hsl.common.metrics.PipelineMetrics;
 import fi.hsl.common.pulsar.IMessageHandler;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.RouteIdUtils;
@@ -19,6 +20,8 @@ public class AlertHandler implements IMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(AlertHandler.class);
 
     public static final String AGENCY_ENTITY_SELECTOR = "HSL";
+
+    private static final String PIPELINE = "servicealert";
 
     private final Consumer<byte[]> consumer;
     private final Producer<byte[]> producer;
@@ -48,6 +51,10 @@ public class AlertHandler implements IMessageHandler {
             GtfsRealtime.FeedMessage feedMessage = FeedMessageFactory.createFullFeedMessage(entities, timestampSecs);
 
             sendPulsarMessage(feedMessage, timestampMs);
+
+            if (timestampMs > 0) {
+                PipelineMetrics.observeLatency(PIPELINE, (System.currentTimeMillis() - timestampMs) / 1000.0);
+            }
         } catch (final Exception e) {
             log.error("Exception while handling message", e);
         } finally {
